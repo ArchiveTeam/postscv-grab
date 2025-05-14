@@ -541,11 +541,11 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     end
     if item_type == "post" then
       if string.match(url, "/graphql$") then
-        if not json["post"]["embeds"]
-          and not json["post"]["likers"]
-          and not json["post"]["reposters"] then
+        --[[if (not json["post"]["embeds"] or json["post"]["embeds"] == cjson.null)
+          and (not json["post"]["likers"] or json["post"]["likers"] == cjson.null)
+          and (not json["post"]["reposters"] or json["post"]["reposters"] == cjson.null) then
           error("Could not find data in post JSON.")
-        end
+        end]]
         if json["post"]["embeds"] and json["post"]["embeds"] ~= cjson.null then
           for _, data in pairs(json["post"]["embeds"]) do
             if data["type"] == "gallery" then
@@ -553,6 +553,10 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
                 --check(data2["url"])
                 create_asset(data2["url"], data2["type"], "limit", -1, 430, data2["height"], data2["width"])
               end
+            elseif data["type"] == "link"
+              and data["payload"]["image"]
+              and data["payload"]["image"] ~= cjson.null then
+              create_asset(data["payload"]["image"]["url"], data["payload"]["image"]["type"], "limit", -1, 430, data["payload"]["image"]["height"], data["payload"]["image"]["width"])
             else
               error("Unexpected media type " .. data["type"] .. ".")
             end
@@ -594,7 +598,8 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     elseif item_type == "user" then
       check("https://posts.cv/_next/data/uK9ax5GMJ6K7xhSB1bl2S/" .. item_value .. ".json?username=" .. item_value)
       if string.match(url, "/graphql$")
-        and json["userByUsername"] then
+        and json["userByUsername"]
+        and json["userByUsername"] ~= cjson.null then
         local photo_url = json["userByUsername"]["photoURL"]
         if photo_url then
           create_asset(photo_url, "image", "fill", 92, 92, -1, -1)
@@ -763,7 +768,11 @@ wget.callbacks.httploop_result = function(url, err, http_stat)
     io.stdout:write("Server returned bad response. ")
     io.stdout:flush()
     tries = tries + 1
-    local maxtries = 11
+    local maxtries = 10
+    if string.match(url["url"], "^https?://[^/]*posts%.cv/[^/]+/[0-9a-zA-Z]+")
+      and status_code == 500 then
+      maxtries = 0
+    end
     if tries > maxtries then
       io.stdout:write(" Skipping.\n")
       io.stdout:flush()
