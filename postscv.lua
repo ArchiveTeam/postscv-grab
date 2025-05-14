@@ -553,10 +553,11 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
                 --check(data2["url"])
                 create_asset(data2["url"], data2["type"], "limit", -1, 430, data2["height"], data2["width"])
               end
-            elseif data["type"] == "link"
-              and data["payload"]["image"]
-              and data["payload"]["image"] ~= cjson.null then
-              create_asset(data["payload"]["image"]["url"], data["payload"]["image"]["type"], "limit", -1, 430, data["payload"]["image"]["height"], data["payload"]["image"]["width"])
+            elseif data["type"] == "link" then
+              if data["payload"]["image"]
+                and data["payload"]["image"] ~= cjson.null then
+                create_asset(data["payload"]["image"]["url"], data["payload"]["image"]["type"], "limit", -1, 430, data["payload"]["image"]["height"], data["payload"]["image"]["width"])
+              end
             else
               error("Unexpected media type " .. data["type"] .. ".")
             end
