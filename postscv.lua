@@ -727,6 +727,14 @@ wget.callbacks.write_to_warc = function(url, http_stat)
     retry_url = true
     return false
   end
+  if string.match(url["url"], "^https?://[^/]+/graphql") then
+    local json = cjson.decode(read_file(http_stat["local_file"]))
+    if json["errors"] then
+      print("Got error " .. cjson.encode(json["errors"]) .. ".")
+      retry_url = true
+      return false
+    end
+  end
   if http_stat["len"] == 0
     and http_stat["statcode"] < 300
     and not string.match(url["url"], "^https?://read%.cv/api/posts/profile/[0-9a-zA-Z]+$") then
@@ -774,6 +782,10 @@ wget.callbacks.httploop_result = function(url, err, http_stat)
     if string.match(url["url"], "^https?://[^/]*posts%.cv/[^/]+/[0-9a-zA-Z]+")
       and status_code == 500 then
       maxtries = 0
+    end
+    if string.match(url["url"], "^https?://[^/]+/graphql")
+      and status_code == 200 then
+      maxtries = 2
     end
     if tries > maxtries then
       io.stdout:write(" Skipping.\n")
