@@ -602,7 +602,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
         and json["userByUsername"]
         and json["userByUsername"] ~= cjson.null then
         local photo_url = json["userByUsername"]["photoURL"]
-        if photo_url then
+        if photo_url and photo_url ~= cjson.null then
           create_asset(photo_url, "image", "fill", 92, 92, -1, -1)
         end
         local all_profile_items = json["userByUsername"]["allProfileItems"]
@@ -728,7 +728,8 @@ wget.callbacks.write_to_warc = function(url, http_stat)
     return false
   end
   if http_stat["len"] == 0
-    and http_stat["statcode"] < 300 then
+    and http_stat["statcode"] < 300
+    and not string.match(url["url"], "^https?://read%.cv/api/posts/profile/[0-9a-zA-Z]+$") then
     retry_url = true
     return false
   end
